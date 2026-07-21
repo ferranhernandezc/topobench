@@ -1,0 +1,3 @@
+defaults:
+  - /transforms/liftings/graph2simplicial@graph2simplicial_lifting: clique
+  - /transforms/data_manipulations@compute_q_dict: compute_q_dict
