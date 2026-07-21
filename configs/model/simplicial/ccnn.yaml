@@ -38,8 +38,5 @@ readout:
   task_level: ${define_task_level:${dataset.parameters.task_level},${dataset.split_params.learning_setting}}
   pooling_type: sum
 
-transforms:
-  - _target_: topobench.transforms.data_manipulations.compute_q.ComputeQDict
-
 # compile model for faster training with pytorch 2.0
 compile: false
