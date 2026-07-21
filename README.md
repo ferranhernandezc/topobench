@@ -93,6 +93,12 @@ source .venv/bin/activate
 uv sync --all-extras
 ```
 
+On newer versions of Mac you might run into c++ compilation issues while building some packages like torch_sparse. A workaround for this issue is to use a couple of flags in the last line of the previous instructions. 
+```bash
+CFLAGS="-Wno-invalid-specialization" CXXFLAGS="-Wno-invalid-specialization" uv sync --all-extras
+```
+
+
 🚄 Run Training Pipeline
 Once the environment is active, you can launch the TopoBench pipeline:
 ```bash
