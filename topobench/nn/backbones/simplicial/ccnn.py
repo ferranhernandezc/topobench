@@ -121,7 +121,7 @@ class CCNN(nn.Module):
         self,
         dim_hidden: int,
         out_channels: int,
-        num_layers: int = 2,
+        n_layers: int = 2,
         use_linear_0: bool = True,
         use_linear_1: bool = True,
         use_linear_2: bool = True,
@@ -143,7 +143,7 @@ class CCNN(nn.Module):
                     use_linear_3=use_linear_3,
                     use_linear_4=use_linear_4,
                 )
-                for _ in range(num_layers)
+                for _ in range(n_layers)
             ]
         )
 
