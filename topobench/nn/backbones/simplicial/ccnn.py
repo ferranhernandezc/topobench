@@ -103,7 +103,7 @@ class CCNNLayer(nn.Module):
         if self.use_linear_0:
             node_update += self.linear_0(x_0)
 
-        if self.use_linear_1
+        if self.use_linear_1:
             node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
 
         if self.use_linear_2:

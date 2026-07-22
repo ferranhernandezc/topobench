@@ -21,7 +21,7 @@ backbone:
   use_linear_2: True
   use_linear_3: True
   use_linear_4: True
-
+  use_square: False
 backbone_wrapper:
   _target_: topobench.nn.wrappers.simplicial.cc_wrapper.CCWrapper
   _partial_: true
