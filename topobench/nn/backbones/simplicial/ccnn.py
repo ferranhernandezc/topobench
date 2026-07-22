@@ -14,6 +14,7 @@ class CCNNLayer(nn.Module):
         use_linear_2: bool = True,
         use_linear_3: bool = True,
         use_linear_4: bool = True,
+        use_square: bool = False,
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -22,7 +23,7 @@ class CCNNLayer(nn.Module):
         self.use_linear_2 = use_linear_2
         self.use_linear_3 = use_linear_3
         self.use_linear_4 = use_linear_4
-
+        self.use_square = use_square
         # Node feature update transformations
         if self.use_linear_0:
             self.linear_0 = nn.Linear(dim_hidden, dim_hidden)
@@ -102,7 +103,7 @@ class CCNNLayer(nn.Module):
         if self.use_linear_0:
             node_update += self.linear_0(x_0)
 
-        if self.use_linear_1:
+        if self.use_linear_1
             node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
 
         if self.use_linear_2:
@@ -121,7 +122,10 @@ class CCNNLayer(nn.Module):
 
         if self.use_linear_4:
             # Uses the newly computed x_0 representations for boundary propagation
-            edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
+            if self.use_square:
+                edge_update += self.linear_4(torch.square(torch.sparse.mm(B1.T, x_0_next)))
+            else:
+                edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
 
         chi_next = self.act(edge_update)
 
@@ -141,6 +145,7 @@ class CCNN(nn.Module):
         use_linear_2: bool = True,
         use_linear_3: bool = True,
         use_linear_4: bool = True,
+        use_square: bool = False,
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -156,6 +161,7 @@ class CCNN(nn.Module):
                     use_linear_2=use_linear_2,
                     use_linear_3=use_linear_3,
                     use_linear_4=use_linear_4,
+                    use_square=use_square,
                 )
                 for _ in range(n_layers)
             ]
