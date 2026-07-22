@@ -103,7 +103,7 @@ class CCNNLayer(nn.Module):
             node_update += self.linear_0(x_0)
 
         if self.use_linear_1:
-            node_update += self.linear_1(torch.sparse.mm(B1, chi))
+            node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
 
         if self.use_linear_2:
             tri_accumulations = self.compute_triangle_aggregations(
@@ -121,7 +121,7 @@ class CCNNLayer(nn.Module):
 
         if self.use_linear_4:
             # Uses the newly computed x_0 representations for boundary propagation
-            edge_update += self.linear_4(torch.sparse.mm(B1.T, x_0_next))
+            edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
 
         chi_next = self.act(edge_update)
 
