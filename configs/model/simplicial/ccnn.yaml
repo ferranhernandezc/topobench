@@ -1,0 +1,42 @@
+_target_: topobench.model.TBModel
+
+model_name: ccnn
+model_domain: simplicial
+
+feature_encoder:
+  _target_: topobench.nn.encoders.${model.feature_encoder.encoder_name}
+  encoder_name: AllCellFeatureEncoder
+  in_channels: ${infer_in_channels:${dataset},${oc.select:transforms,null}}
+  out_channels: 32
+  proj_dropout: 0.2
+
+backbone:
+  _target_: topobench.nn.backbones.simplicial.ccnn.CCNN
+  dim_hidden: ${model.feature_encoder.out_channels}
+  out_channels: ${dataset.parameters.num_classes}
+  n_layers: 3
+  # Ablation toggles (changeable via CLI or W&B configurations)
+  use_linear_0: True
+  use_linear_1: True
+  use_linear_2: True
+  use_linear_3: True
+  use_linear_4: True
+
+backbone_wrapper:
+  _target_: topobench.nn.wrappers.simplicial.cc_wrapper.CCWrapper
+  _partial_: true
+  wrapper_name: CCWrapper
+  out_channels: ${model.feature_encoder.out_channels}
+  num_cell_dimensions: ${infer_num_cell_dimensions:${oc.select:model.feature_encoder.selected_dimensions,null},${model.feature_encoder.in_channels}}
+
+readout:
+  _target_: topobench.nn.readouts.${model.readout.readout_name}
+  readout_name: PropagateSignalDown
+  num_cell_dimensions: ${infer_num_cell_dimensions:${oc.select:model.feature_encoder.selected_dimensions,null},${model.feature_encoder.in_channels}}
+  hidden_dim: ${model.feature_encoder.out_channels}
+  out_channels: ${dataset.parameters.num_classes}
+  task_level: ${define_task_level:${dataset.parameters.task_level},${dataset.split_params.learning_setting}}
+  pooling_type: sum
+
+# compile model for faster training with pytorch 2.0
+compile: false
