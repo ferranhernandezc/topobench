@@ -65,7 +65,7 @@ class CCNNLayer(nn.Module):
     ) -> torch.Tensor:
         """
         Vectorized node-wise triangle boundary feature accumulation.
-        Computes for each node i: 1 - sum_{tri layers} (|chi_e| * (x_j + x_k - 2*x_i))
+        Computes for each node i:  sum_{tri layers} (|chi_e| * (x_j + x_k - 2*x_i))
 
         Q_center, Q_v0, Q_v1, Q_edge are parallel 1-D tensors (one entry per
         (node, opposite-triangle) pair), already batched with correct global
@@ -73,18 +73,18 @@ class CCNNLayer(nn.Module):
         empty case (no triangles in the batch).
         """
         num_nodes = x_0.shape[0]
-        tri_features = torch.ones((num_nodes, self.dim_hidden), device=x_0.device, dtype=x_0.dtype)
+        tri_features = torch.zeros((num_nodes, self.dim_hidden), device=x_0.device, dtype=x_0.dtype)
 
         if Q_center.numel() == 0:
             # No triangles anywhere in this batch -- nothing to subtract.
             return tri_features
 
-        edge_val = torch.abs(chi[Q_edge])                         # [num_terms, dim_hidden]
+        edge_val = torch.tanh(chi[Q_edge])                         # [num_terms, dim_hidden]
         node_diff = x_0[Q_v0] + x_0[Q_v1] - 2 * x_0[Q_center]      # [num_terms, dim_hidden]
         contrib = edge_val * node_diff                            # [num_terms, dim_hidden]
 
         summed = scatter(contrib, Q_center, dim=0, dim_size=num_nodes, reduce="sum")
-        tri_features = tri_features - summed
+        tri_features = tri_features + summed
         return tri_features
 
     def forward(
