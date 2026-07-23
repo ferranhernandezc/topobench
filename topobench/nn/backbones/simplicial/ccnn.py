@@ -38,6 +38,20 @@ class CCNNLayer(nn.Module):
             self.linear_4 = nn.Linear(dim_hidden, dim_hidden)
 
         self.act = nn.ReLU()
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        """Reset learnable parameters."""
+        if self.use_linear_0:
+            self.linear_0.reset_parameters()
+        if self.use_linear_1:
+            self.linear_1.reset_parameters()
+        if self.use_linear_2:
+            self.linear_2.reset_parameters()
+        if self.use_linear_3:
+            self.linear_3.reset_parameters()
+        if self.use_linear_4:
+            self.linear_4.reset_parameters()
 
     def compute_triangle_aggregations(
         self,
@@ -146,6 +160,12 @@ class CCNN(nn.Module):
                 for _ in range(n_layers)
             ]
         )
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        """Reset learnable parameters."""
+        for layer in self.layers:
+            layer.reset_parameters()
 
     def forward(
         self,
