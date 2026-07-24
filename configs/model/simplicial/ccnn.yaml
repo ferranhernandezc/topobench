@@ -16,10 +16,10 @@ backbone:
   out_channels: ${dataset.parameters.num_classes}
   n_layers: 3
   # Ablation toggles (changeable via CLI or W&B configurations)
-  use_linear_0: True
+  use_parameter_0: True
   use_linear_1: True
   use_linear_2: True
-  use_linear_3: True
+  use_parameter_3: True
   use_linear_4: True
   use_square: False
 backbone_wrapper:
