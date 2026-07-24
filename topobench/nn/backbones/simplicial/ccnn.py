@@ -9,32 +9,32 @@ class CCNNLayer(nn.Module):
     def __init__(
         self,
         dim_hidden: int,
-        use_linear_0: bool = True,
+        use_parameter_0: bool = True,
         use_linear_1: bool = True,
         use_linear_2: bool = True,
-        use_linear_3: bool = True,
+        use_parameter_3: bool = True,
         use_linear_4: bool = True,
         use_square: bool = False,
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
-        self.use_linear_0 = use_linear_0
+        self.use_parameter_0 = use_parameter_0
         self.use_linear_1 = use_linear_1
         self.use_linear_2 = use_linear_2
-        self.use_linear_3 = use_linear_3
+        self.use_parameter_3 = use_parameter_3
         self.use_linear_4 = use_linear_4
         self.use_square = use_square
         # Node feature update transformations
-        if self.use_linear_0:
-            self.linear_0 = nn.Linear(dim_hidden, dim_hidden)
+        if self.use_parameter_0:
+            self.parameter_0 = nn.Parameter(torch.randn(dim_hidden))
         if self.use_linear_1:
             self.linear_1 = nn.Linear(dim_hidden, dim_hidden)
         if self.use_linear_2:
             self.linear_2 = nn.Linear(dim_hidden, dim_hidden)
 
         # Edge feature (auxiliary cochain) update transformations
-        if self.use_linear_3:
-            self.linear_3 = nn.Linear(dim_hidden, dim_hidden)
+        if self.use_parameter_3:
+            self.parameter_3 = nn.Parameter(torch.randn(dim_hidden))
         if self.use_linear_4:
             self.linear_4 = nn.Linear(dim_hidden, dim_hidden)
 
@@ -43,14 +43,14 @@ class CCNNLayer(nn.Module):
 
     def reset_parameters(self):
         """Reset learnable parameters."""
-        if self.use_linear_0:
-            self.linear_0.reset_parameters()
+        if self.use_parameter_0:
+            self.parameter_0.data = torch.randn_like(self.parameter_0.data)
         if self.use_linear_1:
             self.linear_1.reset_parameters()
         if self.use_linear_2:
             self.linear_2.reset_parameters()
-        if self.use_linear_3:
-            self.linear_3.reset_parameters()
+        if self.use_parameter_3:
+            self.parameter_3.data = torch.randn_like(self.parameter_3.data)
         if self.use_linear_4:
             self.linear_4.reset_parameters()
 
@@ -100,8 +100,8 @@ class CCNNLayer(nn.Module):
         # --- Update Node Signals (x_0) ---
         node_update = torch.zeros_like(x_0)
 
-        if self.use_linear_0:
-            node_update += self.linear_0(x_0)
+        if self.use_parameter_0:
+            node_update += x_0 *self.parameter_0
 
         if self.use_linear_1:
             node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
@@ -117,8 +117,8 @@ class CCNNLayer(nn.Module):
         # --- Update Edge Signals (chi) ---
         edge_update = torch.zeros_like(chi)
 
-        if self.use_linear_3:
-            edge_update += self.linear_3(chi)
+        if self.use_parameter_3:
+            edge_update += chi * self.parameter_3
 
         if self.use_linear_4:
             # Uses the newly computed x_0 representations for boundary propagation
@@ -140,10 +140,10 @@ class CCNN(nn.Module):
         dim_hidden: int,
         out_channels: int,
         n_layers: int = 2,
-        use_linear_0: bool = True,
+        use_parameter_0: bool = True,
         use_linear_1: bool = True,
         use_linear_2: bool = True,
-        use_linear_3: bool = True,
+        use_parameter_3: bool = True,
         use_linear_4: bool = True,
         use_square: bool = False,
     ):
@@ -156,10 +156,10 @@ class CCNN(nn.Module):
             [
                 CCNNLayer(
                     dim_hidden=dim_hidden,
-                    use_linear_0=use_linear_0,
+                    use_parameter_0=use_parameter_0,
                     use_linear_1=use_linear_1,
                     use_linear_2=use_linear_2,
-                    use_linear_3=use_linear_3,
+                    use_parameter_3=use_parameter_3,
                     use_linear_4=use_linear_4,
                     use_square=use_square,
                 )
