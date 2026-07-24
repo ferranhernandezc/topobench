@@ -14,6 +14,7 @@ class CCNNLayer(nn.Module):
         use_linear_2: bool = True,
         use_linear_3: bool = True,
         use_linear_4: bool = True,
+        use_square: bool = False,
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -22,7 +23,7 @@ class CCNNLayer(nn.Module):
         self.use_linear_2 = use_linear_2
         self.use_linear_3 = use_linear_3
         self.use_linear_4 = use_linear_4
-
+        self.use_square = use_square
         # Node feature update transformations
         if self.use_linear_0:
             self.linear_0 = nn.Linear(dim_hidden, dim_hidden)
@@ -64,7 +65,7 @@ class CCNNLayer(nn.Module):
     ) -> torch.Tensor:
         """
         Vectorized node-wise triangle boundary feature accumulation.
-        Computes for each node i: 1 - sum_{tri layers} (|chi_e| * (x_j + x_k - 2*x_i))
+        Computes for each node i:  sum_{tri layers} (|chi_e| * (x_j + x_k - 2*x_i))
 
         Q_center, Q_v0, Q_v1, Q_edge are parallel 1-D tensors (one entry per
         (node, opposite-triangle) pair), already batched with correct global
@@ -72,18 +73,18 @@ class CCNNLayer(nn.Module):
         empty case (no triangles in the batch).
         """
         num_nodes = x_0.shape[0]
-        tri_features = torch.ones((num_nodes, self.dim_hidden), device=x_0.device, dtype=x_0.dtype)
+        tri_features = torch.zeros((num_nodes, self.dim_hidden), device=x_0.device, dtype=x_0.dtype)
 
         if Q_center.numel() == 0:
             # No triangles anywhere in this batch -- nothing to subtract.
             return tri_features
 
-        edge_val = torch.abs(chi[Q_edge])                         # [num_terms, dim_hidden]
+        edge_val = torch.tanh(chi[Q_edge])                         # [num_terms, dim_hidden]
         node_diff = x_0[Q_v0] + x_0[Q_v1] - 2 * x_0[Q_center]      # [num_terms, dim_hidden]
         contrib = edge_val * node_diff                            # [num_terms, dim_hidden]
 
         summed = scatter(contrib, Q_center, dim=0, dim_size=num_nodes, reduce="sum")
-        tri_features = tri_features - summed
+        tri_features = tri_features + summed
         return tri_features
 
     def forward(
@@ -103,7 +104,7 @@ class CCNNLayer(nn.Module):
             node_update += self.linear_0(x_0)
 
         if self.use_linear_1:
-            node_update += self.linear_1(torch.sparse.mm(B1, chi))
+            node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
 
         if self.use_linear_2:
             tri_accumulations = self.compute_triangle_aggregations(
@@ -121,7 +122,10 @@ class CCNNLayer(nn.Module):
 
         if self.use_linear_4:
             # Uses the newly computed x_0 representations for boundary propagation
-            edge_update += self.linear_4(torch.sparse.mm(B1.T, x_0_next))
+            if self.use_square:
+                edge_update += self.linear_4(torch.square(torch.sparse.mm(B1.T, x_0_next)))
+            else:
+                edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
 
         chi_next = self.act(edge_update)
 
@@ -141,6 +145,7 @@ class CCNN(nn.Module):
         use_linear_2: bool = True,
         use_linear_3: bool = True,
         use_linear_4: bool = True,
+        use_square: bool = False,
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -156,6 +161,7 @@ class CCNN(nn.Module):
                     use_linear_2=use_linear_2,
                     use_linear_3=use_linear_3,
                     use_linear_4=use_linear_4,
+                    use_square=use_square,
                 )
                 for _ in range(n_layers)
             ]
