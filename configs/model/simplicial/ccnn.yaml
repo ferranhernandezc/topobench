@@ -24,7 +24,7 @@ backbone:
   use_parameter_5: False
   use_square: False
   dropout: 0.0
-  norm_type: BatchNorm
+  norm_type: null
 backbone_wrapper:
   _target_: topobench.nn.wrappers.simplicial.cc_wrapper.CCWrapper
   _partial_: true
