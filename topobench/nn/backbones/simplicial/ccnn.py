@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
+from torch_geometric.nn import BatchNorm
 from torch_geometric.utils import scatter
 
 
 class CCNNLayer(nn.Module):
-    """A single layer/block of the Cup and Cap Neural Network with ablation controls."""
+    """A single layer/block of the Cup and Cap Neural Network with ablation controls and normalization options."""
 
     def __init__(
         self,
@@ -16,6 +17,8 @@ class CCNNLayer(nn.Module):
         use_linear_4: bool = True,
         use_parameter_5: bool = False,
         use_square: bool = False,
+        dropout: float = 0.0,
+        norm_type: str | None = "BatchNorm",
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -26,6 +29,8 @@ class CCNNLayer(nn.Module):
         self.use_linear_4 = use_linear_4
         self.use_parameter_5 = use_parameter_5
         self.use_square = use_square
+        self.norm_type = norm_type
+
         # Node feature update transformations
         if self.use_parameter_0:
             self.parameter_0 = nn.Parameter(torch.randn(dim_hidden))
@@ -43,6 +48,20 @@ class CCNNLayer(nn.Module):
             self.parameter_5 = nn.Parameter(torch.randn(dim_hidden))
 
         self.act = nn.ReLU()
+        self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
+
+        if self.norm_type in (None, "None", "null", False, "Identity"):
+            self.norm_node = nn.Identity()
+            self.norm_edge = nn.Identity()
+        elif self.norm_type == "BatchNorm":
+            self.norm_node = BatchNorm(dim_hidden)
+            self.norm_edge = BatchNorm(dim_hidden)
+        elif self.norm_type == "LayerNorm":
+            self.norm_node = nn.LayerNorm(dim_hidden)
+            self.norm_edge = nn.LayerNorm(dim_hidden)
+        else:
+            raise ValueError(f"Unsupported norm_type: {self.norm_type}")
+
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -57,8 +76,13 @@ class CCNNLayer(nn.Module):
             self.parameter_3.data = torch.randn_like(self.parameter_3.data)
         if self.use_linear_4:
             self.linear_4.reset_parameters()
-        if self.use_parameter_5:    
+        if self.use_parameter_5:
             self.parameter_5.data = torch.randn_like(self.parameter_5.data)
+
+        if hasattr(self.norm_node, "reset_parameters"):
+            self.norm_node.reset_parameters()
+        if hasattr(self.norm_edge, "reset_parameters"):
+            self.norm_edge.reset_parameters()
 
     def compute_triangle_aggregations(
         self,
@@ -107,10 +131,10 @@ class CCNNLayer(nn.Module):
         node_update = torch.zeros_like(x_0)
 
         if self.use_parameter_0:
-            node_update += x_0 *self.parameter_0
+            node_update += x_0 * self.parameter_0
 
         if self.use_linear_1:
-            node_update += self.linear_1(torch.sparse.mm(B1,torch.sparse.mm(B1.T, x_0)))
+            node_update += self.linear_1(torch.sparse.mm(B1, torch.sparse.mm(B1.T, x_0)))
 
         if self.use_linear_2:
             tri_accumulations = self.compute_triangle_aggregations(
@@ -118,7 +142,10 @@ class CCNNLayer(nn.Module):
             )
             node_update += self.linear_2(tri_accumulations)
 
-        x_0_next = self.act(node_update)
+        node_update = self.dropout(self.act(node_update))
+        node_update = self.norm_node(node_update)
+
+        x_0_next = node_update
 
         # --- Update Edge Signals (chi) ---
         edge_update = torch.zeros_like(chi)
@@ -136,7 +163,10 @@ class CCNNLayer(nn.Module):
         if self.use_parameter_5:
             edge_update += self.parameter_5
 
-        chi_next = self.act(edge_update)
+        edge_update = self.dropout(self.act(edge_update))
+        edge_update = self.norm_edge(edge_update)
+
+        chi_next = edge_update
 
         return x_0_next, chi_next
 
@@ -156,6 +186,8 @@ class CCNN(nn.Module):
         use_linear_4: bool = True,
         use_parameter_5: bool = False,
         use_square: bool = False,
+        dropout: float = 0.0,
+        norm_type: str | None = "BatchNorm",
     ):
         super().__init__()
         self.dim_hidden = dim_hidden
@@ -173,6 +205,8 @@ class CCNN(nn.Module):
                     use_linear_4=use_linear_4,
                     use_parameter_5=use_parameter_5,
                     use_square=use_square,
+                    dropout=dropout,
+                    norm_type=norm_type,
                 )
                 for _ in range(n_layers)
             ]
