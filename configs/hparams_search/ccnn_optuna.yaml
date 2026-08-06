@@ -51,7 +51,7 @@ hydra:
       model.feature_encoder.proj_dropout: choice(0.25, 0.5)
       model.backbone.n_layers: choice(2, 3, 4, 5)
       model.backbone.use_parameter_5: True
-      model.backbone.dropout: choice(0.0, 0.1, 0.5)
+      model.backbone.dropout: choice(0.0, 0.1, 0.25, 0.5)
       model.backbone.norm_type: choice("null", "BatchNorm", "LayerNorm")
       model.readout.readout_name: choice("PropagateSignalDown", "NoReadOut")
 
