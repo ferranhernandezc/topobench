@@ -9,6 +9,10 @@ feature_encoder:
   in_channels: ${infer_in_channels:${dataset},${oc.select:transforms,null}}
   out_channels: 32
   proj_dropout: 0.2
+  selected_dimensions:
+    - 0
+    - 1
+    - 2
 
 backbone:
   _target_: topobench.nn.backbones.simplicial.ccnn.CCNN
