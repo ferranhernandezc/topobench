@@ -202,7 +202,7 @@ python -m topobench -m hparams_search=ccnn_optuna experiment=ccnn_experiment dat
 To change the accelerator (you can use `cpu`, `gpu`, `cuda`, or `cuda:device`), use the following command:
 
 ```bash
-python -m topobench -m hparams_search=ccnn_optuna experiment=ccnn_experiment dataset=graph/MUTAG trainer.accelerator=cpu
+python -m topobench -m hparams_search=ccnn_optuna experiment=ccnn_experiment dataset=graph/MUTAG trainer.accelerator=cpu dataset.split_params.data_seed=0,3,5,7,9 --multirun
 ```
 **EXTREMELY IMPORTANT TO KEEP THE ORDER OF THE ARGUMENTS INTACT**
 
