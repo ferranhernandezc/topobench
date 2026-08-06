@@ -1,0 +1,55 @@
+# @package _global_
+
+# to execute this experiment run:
+# python -m topobench experiment=ccnn_experiment dataset=graph/MUTAG
+
+defaults:
+  - override /model: simplicial/ccnn
+  - override /callbacks: default
+  - override /trainer: default
+  - override /logger: wandb
+  - override /dataset: default
+  - override /optimizer: default
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+tags: ["ccnn"]
+
+seed: 42
+
+optimizer:
+  parameters:
+    lr: 0.001
+
+logger:
+  wandb:
+    project: "TopoBench"
+
+trainer:
+  min_epochs: 50
+  max_epochs: 1000
+  check_val_every_n_epoch: 1
+  accelerator: gpu
+  devices: 1
+
+callbacks:
+  early_stopping:
+    patience: 50
+
+dataset:
+  split_params:
+    data_seed: 0
+
+model:
+  feature_encoder:
+    out_channels: 64
+    proj_dropout: 0.25
+  backbone:
+    n_layers: 2
+    use_parameter_5: True
+    dropout: 0.1
+    norm_type: BatchNorm
+  readout:
+    readout_name: PropagateSignalDown
+  compile: false

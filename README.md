@@ -190,6 +190,22 @@ This approach allows you to create complex transform pipelines, including multip
 By mastering these configuration options, you can easily customize your experiments to suit your specific needs, from simple model and dataset selections to complex data transformation pipelines.
 ---
 
+### Hyperparameter Optimization
+
+We support hyperparameter optimization through **Optuna**.  
+The following command runs an Optuna hyperparameter optimization. To run a sweep on any dataset, such as `graph/MUTAG`, you can use the following command:
+
+```bash
+python -m topobench -m hparams_search=ccnn_optuna experiment=ccnn_experiment dataset=graph/MUTAG
+```
+
+To change the accelerator (you can use `cpu`, `gpu`, `cuda`, or `cuda:device`), use the following command:
+
+```bash
+python -m topobench -m hparams_search=ccnn_optuna experiment=ccnn_experiment dataset=graph/MUTAG trainer.accelerator=cpu dataset.split_params.data_seed=0,3,5,7,9 optimized_metric="val/accuracy" --multirun
+```
+**EXTREMELY IMPORTANT TO KEEP THE ORDER OF THE ARGUMENTS INTACT**
+
 ### Additional Notes
 
 - **Automatic Lifting:** By default, our pipeline identifies the source and destination topological domains and applies a default lifting between them if required.  
