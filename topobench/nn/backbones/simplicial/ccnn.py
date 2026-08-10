@@ -17,6 +17,7 @@ class CCNNLayer(nn.Module):
         use_linear_4: bool = True,
         use_parameter_5: bool = False,
         use_square: bool = False,
+        use_product: bool = False,
         dropout: float = 0.0,
         norm_type: str | None = "BatchNorm",
     ):
@@ -29,6 +30,7 @@ class CCNNLayer(nn.Module):
         self.use_linear_4 = use_linear_4
         self.use_parameter_5 = use_parameter_5
         self.use_square = use_square
+        self.use_product = use_product
         self.norm_type = norm_type
 
         # Node feature update transformations
@@ -157,6 +159,10 @@ class CCNNLayer(nn.Module):
             # Uses the newly computed x_0 representations for boundary propagation
             if self.use_square:
                 edge_update += self.linear_4(torch.square(torch.sparse.mm(B1.T, x_0_next)))
+            if self.use_product:
+                B_pos = B1.clamp_min(0)
+                B_neg = (-B1).clamp_min(0)
+                edge_update += self.linear_4((B_pos.T @ x_0_next) * (B_neg.T @ x_0_next))
             else:
                 edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
 
@@ -186,6 +192,7 @@ class CCNN(nn.Module):
         use_linear_4: bool = True,
         use_parameter_5: bool = False,
         use_square: bool = False,
+        use_product: bool = False,
         dropout: float = 0.0,
         norm_type: str | None = "BatchNorm",
     ):
@@ -205,6 +212,7 @@ class CCNN(nn.Module):
                     use_linear_4=use_linear_4,
                     use_parameter_5=use_parameter_5,
                     use_square=use_square,
+                    use_product=use_product,
                     dropout=dropout,
                     norm_type=norm_type,
                 )

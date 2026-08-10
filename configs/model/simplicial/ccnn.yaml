@@ -27,6 +27,7 @@ backbone:
   use_linear_4: True
   use_parameter_5: False
   use_square: False
+  use_product: False
   dropout: 0.0
   norm_type: null
 backbone_wrapper:
