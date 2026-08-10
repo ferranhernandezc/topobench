@@ -160,9 +160,10 @@ class CCNNLayer(nn.Module):
             if self.use_square:
                 edge_update += self.linear_4(torch.square(torch.sparse.mm(B1.T, x_0_next)))
             if self.use_product:
-                B_pos = B1.values().clamp_min_(0)
-                B_neg = (-B1).values().clamp_min_(0)
-                edge_update += self.linear_4((B_pos.T @ x_0_next) * (B_neg.T @ x_0_next))
+                B1_copy = B1.coalesce()
+                B1_pos = B1_copy.values().clamp_min_(0)
+                B1_neg = (-B1_copy).values().clamp_min_(0)
+                edge_update += self.linear_4((B1_pos.T @ x_0_next) * (B1_neg.T @ x_0_next))
             else:
                 edge_update += self.linear_4(torch.abs(torch.sparse.mm(B1.T, x_0_next)))
 
